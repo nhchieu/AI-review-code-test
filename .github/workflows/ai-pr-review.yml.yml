@@ -1,0 +1,61 @@
+name: AI Code Review
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  ai_review:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # cần full history để diff
+
+      # 2. Lấy diff của PR
+      - name: Get PR Diff
+        id: diff
+        run: |
+          PR_DIFF=$(git diff origin/${{ github.base_ref }}...HEAD)
+          echo "::set-output name=patch::$PR_DIFF"
+
+      # 3. Gọi AI để review code
+      - name: AI Review via OpenAI
+        id: ai_review
+        uses: docker://ghcr.io/your-org/ai-pr-review-action:latest
+        with:
+          openai_api_key: ${{ secrets.OPENAI_API_KEY }}
+          diff: ${{ steps.diff.outputs.patch }}
+
+      # 4. Comment feedback lên PR
+      - name: Comment on PR
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const feedback = JSON.parse(process.env.AI_FEEDBACK);
+            for (const comment of feedback.line_comments) {
+              await github.rest.pulls.createReviewComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number,
+                body: comment.body,
+                path: comment.file,
+                line: comment.line
+              });
+            }
+            // Lưu summary vào output để gửi tiếp
+            core.setOutput('summary', feedback.summary);
+        env:
+          AI_FEEDBACK: ${{ steps.ai_review.outputs.response }}
+
+      # 5. Gửi tóm tắt lên Mattermost
+      - name: Send Summary to Mattermost
+        env:
+          MM_WEBHOOK: ${{ secrets.MATTERMOST_WEBHOOK_URL }}
+          REVIEW_SUMMARY: ${{ needs.ai_review.outputs.summary }}
+        run: |
+          payload=$(jq -n --arg txt "$REVIEW_SUMMARY" '{text: $txt}')
+          curl -X POST -H 'Content-Type: application/json' -d "$payload" "$MM_WEBHOOK"
