@@ -3,7 +3,7 @@ import sys
 import json
 import asyncio
 from typing import List, Dict
-import google.generativeai as genai
+from openai import OpenAI
 from github import Github
 import telegram
 
@@ -11,7 +11,7 @@ def validate_env_vars():
     """Validate required environment variables"""
     required_vars = {
         'GITHUB_TOKEN': 'GitHub access token',
-        'GOOGLE_API_KEY': 'Google API key',
+        'OPENAI_API_KEY': 'OpenAI API key',
         'GITHUB_EVENT_PATH': 'GitHub event path'
     }
     
@@ -26,39 +26,12 @@ def validate_env_vars():
             print(f"- {var}")
         sys.exit(1)
 
-def get_available_model():
-    """Get the first available Gemini model"""
-    try:
-        models = genai.list_models()
-        print("Available models:", [m.name for m in models])
-        
-        # Get the first available model
-        for model in models:
-            if 'gemini' in model.name.lower():
-                print(f"Using model: {model.name}")
-                return model.name
-        
-        print("No Gemini models found!")
-        return None
-    except Exception as e:
-        print(f"Error listing models: {str(e)}")
-        return None
-
 # Validate environment variables
 validate_env_vars()
 
-# Configure Gemini API
-GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
-genai.configure(api_key=GOOGLE_API_KEY)
-
-# Get available model
-model_name = get_available_model()
-if not model_name:
-    print("No suitable model found. Please check your API key and permissions.")
-    sys.exit(1)
-
-# Initialize model
-model = genai.GenerativeModel(model_name)
+# Configure OpenAI API
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 # Configure GitHub
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
@@ -93,7 +66,7 @@ def get_pr_files() -> List[Dict]:
         raise
 
 def review_code(content: str, filename: str) -> str:
-    """Review code using Gemini API"""
+    """Review code using OpenAI API"""
     try:
         prompt = f"""
         Please review the following code from file {filename}. Focus on:
@@ -109,10 +82,19 @@ def review_code(content: str, filename: str) -> str:
         {content}
         """
         
-        response = model.generate_content(prompt)
-        if not response or not response.text:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful code reviewer. You provide clear, actionable feedback focusing on code quality, security, and best practices."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.7,
+            max_tokens=1000
+        )
+        
+        if not response.choices or not response.choices[0].message.content:
             return "Error: Unable to generate review. Please check the API configuration."
-        return response.text
+        return response.choices[0].message.content
     except Exception as e:
         print(f"Error reviewing code: {str(e)}")
         raise

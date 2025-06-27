@@ -1,4 +1,6 @@
-google-generativeai>=0.3.0
-PyGithub>=2.1.1
-requests>=2.31.0
-python-telegram-bot>=20.8 
+openai==1.12.0
+PyGithub==2.1.1
+python-telegram-bot==20.8
+python-dotenv==1.0.1
+requests==2.31.0
+aiohttp==3.9.3 
