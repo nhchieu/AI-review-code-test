@@ -18,16 +18,6 @@ class Calculator {
         return result;
     }
 
-    // Inconsistent method naming and unnecessary complexity (issues)
-    MULTIPLY(a, b) {
-        var result = 0;
-        // Potential infinite loop (issue)
-        while(result < a * b) {
-            result += a;
-        }
-        return result;
-    }
-
     // SQL Injection vulnerability simulation (security issue)
     async getUserCalculations(userId) {
         // This is just for demonstration
