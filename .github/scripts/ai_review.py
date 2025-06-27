@@ -97,7 +97,7 @@ def review_code(content: str, filename: str) -> str:
 
         Lưu ý:
         - Chỉ tập trung vào các vấn đề, KHÔNG đề cập ưu điểm
-        - Với mỗi vấn đề, cần chỉ rõ vị trí (số dòng) trong code
+        - Với mỗi vấn đề, cần chỉ rõ vị trí (số dòng) trong code và đưa ra đoạn code có vấn đề
         - Đề xuất cách sửa phải cụ thể và có thể áp dụng ngay
         
         Code cần review:
