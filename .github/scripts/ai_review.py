@@ -26,13 +26,39 @@ def validate_env_vars():
             print(f"- {var}")
         sys.exit(1)
 
+def get_available_model():
+    """Get the first available Gemini model"""
+    try:
+        models = genai.list_models()
+        print("Available models:", [m.name for m in models])
+        
+        # Get the first available model
+        for model in models:
+            if 'gemini' in model.name.lower():
+                print(f"Using model: {model.name}")
+                return model.name
+        
+        print("No Gemini models found!")
+        return None
+    except Exception as e:
+        print(f"Error listing models: {str(e)}")
+        return None
+
 # Validate environment variables
 validate_env_vars()
 
 # Configure Gemini API
 GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
 genai.configure(api_key=GOOGLE_API_KEY)
-model = genai.GenerativeModel('gemini-pro')
+
+# Get available model
+model_name = get_available_model()
+if not model_name:
+    print("No suitable model found. Please check your API key and permissions.")
+    sys.exit(1)
+
+# Initialize model
+model = genai.GenerativeModel(model_name)
 
 # Configure GitHub
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
@@ -84,6 +110,8 @@ def review_code(content: str, filename: str) -> str:
         """
         
         response = model.generate_content(prompt)
+        if not response or not response.text:
+            return "Error: Unable to generate review. Please check the API configuration."
         return response.text
     except Exception as e:
         print(f"Error reviewing code: {str(e)}")
