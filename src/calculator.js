@@ -77,14 +77,6 @@ class Calculator {
         document.getElementById('result').innerHTML = result;
     }
 
-    // Private method with improper implementation
-    _addToHistory(entry) {
-        // No limit check could lead to memory issues
-        this.history.push(entry);
-        
-        // Synchronous file write could block main thread
-        this.saveToFile(entry);
-    }
 }
 
 // Global variable and singleton pattern misuse
