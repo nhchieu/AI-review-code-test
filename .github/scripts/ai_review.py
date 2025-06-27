@@ -78,16 +78,29 @@ def review_code(content: str, filename: str) -> str:
     """Review code using Gemini API"""
     try:
         prompt = f"""
-        Please review the following code from file {filename}. Focus on:
-        1. Code style and best practices
-        2. Potential bugs and security issues
-        3. Performance considerations
-        4. Architecture and design patterns
-        5. Maintainability and readability
+        Hãy review đoạn code sau từ file {filename}. Tập trung phân tích các vấn đề sau:
 
-        Provide specific recommendations for improvements.
+        1. Lỗi cú pháp và vi phạm quy tắc coding:
+           - Chỉ ra chính xác dòng code có vấn đề
+           - Giải thích tại sao đó là lỗi
+           - Đề xuất cách sửa
+
+        2. Các lỗ hổng bảo mật:
+           - Xác định vị trí có nguy cơ bảo mật
+           - Mô tả chi tiết mối nguy hiểm
+           - Đề xuất biện pháp khắc phục
+
+        3. Lỗi tiềm ẩn và vấn đề về hiệu năng:
+           - Chỉ ra các đoạn code có thể gây lỗi runtime
+           - Xác định các vấn đề về memory leak, race condition
+           - Đề xuất cách tối ưu
+
+        Lưu ý:
+        - Chỉ tập trung vào các vấn đề, KHÔNG đề cập ưu điểm
+        - Với mỗi vấn đề, cần chỉ rõ vị trí (số dòng) trong code
+        - Đề xuất cách sửa phải cụ thể và có thể áp dụng ngay
         
-        Code to review:
+        Code cần review:
         {content}
         """
         
