@@ -3,7 +3,7 @@ import sys
 import json
 import asyncio
 from typing import List, Dict
-from openai import OpenAI
+import google.generativeai as genai
 from github import Github
 import telegram
 
@@ -11,7 +11,7 @@ def validate_env_vars():
     """Validate required environment variables"""
     required_vars = {
         'GITHUB_TOKEN': 'GitHub access token',
-        'OPENAI_API_KEY': 'OpenAI API key',
+        'GOOGLE_API_KEY': 'Google API key',
         'GITHUB_EVENT_PATH': 'GitHub event path'
     }
     
@@ -29,9 +29,18 @@ def validate_env_vars():
 # Validate environment variables
 validate_env_vars()
 
-# Configure OpenAI API
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-client = OpenAI(api_key=OPENAI_API_KEY)
+# Configure Gemini API
+try:
+    GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+    genai.configure(api_key=GOOGLE_API_KEY)
+    
+    # Initialize model with specific model name
+    print("Initializing Gemini Flash 2.0 model...")
+    model = genai.GenerativeModel('models/gemini-2.0-flash')
+    print("Model initialized successfully!")
+except Exception as e:
+    print(f"Error configuring Gemini API: {str(e)}")
+    sys.exit(1)
 
 # Configure GitHub
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
@@ -66,7 +75,7 @@ def get_pr_files() -> List[Dict]:
         raise
 
 def review_code(content: str, filename: str) -> str:
-    """Review code using OpenAI API"""
+    """Review code using Gemini API"""
     try:
         prompt = f"""
         Please review the following code from file {filename}. Focus on:
@@ -82,19 +91,10 @@ def review_code(content: str, filename: str) -> str:
         {content}
         """
         
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "You are a helpful code reviewer. You provide clear, actionable feedback focusing on code quality, security, and best practices."},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-            max_tokens=1000
-        )
-        
-        if not response.choices or not response.choices[0].message.content:
+        response = model.generate_content(prompt)
+        if not response or not response.text:
             return "Error: Unable to generate review. Please check the API configuration."
-        return response.choices[0].message.content
+        return response.text
     except Exception as e:
         print(f"Error reviewing code: {str(e)}")
         raise
