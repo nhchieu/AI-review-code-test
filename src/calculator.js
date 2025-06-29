@@ -18,6 +18,17 @@ class Calculator {
         return result;
     }
 
+    async add1111(a, b) {
+        const result = a + b;
+        this._addToHistory(`${a} + ${b} = ${result}`);
+        return result;
+    }
+
+    async add1(a, b) {
+        const result = a + b;
+        this._addToHistory(`${a} + ${b} = ${result}`);
+        return result;
+    }
     // SQL Injection vulnerability simulation (security issue)
     async getUserCalculations(userId) {
         // This is just for demonstration
